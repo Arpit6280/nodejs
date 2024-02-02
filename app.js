@@ -1,38 +1,42 @@
 const http = require("http");
+const fs = require("fs");
+const path = require("path");
 
 const server = http.createServer(function (req, res) {
   const url = req.url;
-  if (url === "/") {
-    res.write("<html>");
-    res.write("<head>");
-    res.write("<body>Hii Arpit</body>");
-    res.write("</head>");
-    res.write("</html>");
-    return res.end();
-  } else if (url === "/home") {
-    res.write("<html>");
-    res.write("<head>");
-    res.write("<body>Welcome Home </body>");
-    res.write("</head>");
-    res.write("</html>");
-    return res.end();
-  } else if (url === "/about") {
-    res.write("<html>");
-    res.write("<head>");
-    res.write("<body> Welcome to About us </body>");
-    res.write("</head>");
-    res.write("</html>");
-    return res.end();
-  } else if (url === "/node") {
-    res.write("<html>");
-    res.write("<head>");
-    res.write("<body>Welcome to my node js project </body>");
-    res.write("</head>");
-    res.write("</html>");
-    return res.end();
+  const method = req.method;
+  if (url === "/" && method === "GET") {
+    const filePath = path.join(__dirname, "message.txt");
+    fs.readFile(filePath, "utf-8", function (err, data) {
+      if (err) {
+        console.log(err);
+      }
+      console.log("data", data);
+      res.write("<html>");
+      res.write(`<body> ${data} </body>`);
+      res.write(
+        "<body> <form action='/' method='POST'><input type='text' name='message' /> <button type='send'>Submit</button>  </form> </body>"
+      );
+      res.write("</html>");
+      return res.end();
+    });
+  } else if (url === "/" && method === "POST") {
+    const body = [];
+    req.on("data", (chunk) => {
+      console.log(chunk);
+      body.push(chunk);
+    });
+    req.on("end", () => {
+      const parsedBody = Buffer.concat(body).toString();
+      const message = parsedBody.split("=")[1];
+      console.log(parsedBody);
+      fs.writeFile("message.txt", message, (err) => {
+        res.statusCode = 302;
+        res.setHeader("Location", "/");
+        return res.end();
+      });
+    });
   }
-  console.log("Arpit");
-  console.log(req);
 });
 
 server.listen(4000, () => {
